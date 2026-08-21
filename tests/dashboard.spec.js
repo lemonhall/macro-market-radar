@@ -5,6 +5,7 @@ test('桌面端显示市场状态、主要分区和逐项新鲜度', async ({ pa
   await expect(page.getByText('经纬雷达')).toBeVisible()
   await expect(page.getByRole('heading', { name: '全球股市' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '美股七姐妹' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '消费' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '债市与信用' })).toBeVisible()
   await expect(page.locator('.freshness').first()).toBeVisible()
   await page.locator('.metric-tile').first().click()

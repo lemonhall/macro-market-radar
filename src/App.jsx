@@ -17,6 +17,7 @@ import {
   Landmark,
   RefreshCw,
   Shield,
+  ShoppingCart,
   TrendingUp,
   X,
 } from 'lucide-react'
@@ -27,6 +28,7 @@ import { useMarketData } from './hooks/use-market-data.js'
 const CATEGORY_ICONS = {
   equity: TrendingUp,
   'megacap-tech': Crown,
+  consumer: ShoppingCart,
   bonds: Landmark,
   metals: Coins,
   energy: Fuel,
@@ -41,6 +43,7 @@ const CATEGORY_ICONS = {
 const CATEGORY_NAMES = {
   equity: '全球股市',
   'megacap-tech': '美股七姐妹',
+  consumer: '消费',
   bonds: '债市与信用',
   metals: '金属',
   energy: '能源',
@@ -67,6 +70,7 @@ const METRIC_NOTES = {
   tga: '美国财政部在美联储的现金余额。快速上升通常意味着财政部从市场抽走现金，但不能单独判断流动性。',
   bdry: '干散货期货策略 ETF，只作为运价市场代理，不是 Baltic Dry Index。',
   btc: '7×24 小时交易的高波动风险资产，常被用于观察边际风险偏好，但关系并不稳定。',
+  wmt: '沃尔玛覆盖食品、日用品和可选消费，是观察美国大众购买力与防御型零售需求的代理；股价也会受到利润率、电商和公司自身经营影响。',
 }
 
 function formatValue(metric) {

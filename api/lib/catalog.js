@@ -1,6 +1,7 @@
 export const CATEGORIES = [
   { id: 'equity', name: '全球股市', description: '风险资产与经济预期' },
   { id: 'megacap-tech', name: '美股七姐妹', description: '大型科技股与美股集中度' },
+  { id: 'consumer', name: '消费', description: '居民购买力与防御型零售' },
   { id: 'bonds', name: '债市与信用', description: '全球资产定价锚' },
   { id: 'metals', name: '金属', description: '避险、通胀与工业需求' },
   { id: 'energy', name: '能源', description: '通胀与地缘供给冲击' },
@@ -26,6 +27,8 @@ export const YAHOO_METRICS = [
   ['nvda', 'NVDA', 'megacap-tech', '英伟达', '美元', 2],
   ['meta', 'META', 'megacap-tech', 'Meta', '美元', 2],
   ['tsla', 'TSLA', 'megacap-tech', '特斯拉', '美元', 2],
+
+  ['wmt', 'WMT', 'consumer', '沃尔玛', '美元', 2],
 
   ['us10y', '^TNX', 'bonds', '美国 10 年收益率', '%', 3, 'basisPoints'],
   ['us30y', '^TYX', 'bonds', '美国 30 年收益率', '%', 3, 'basisPoints'],

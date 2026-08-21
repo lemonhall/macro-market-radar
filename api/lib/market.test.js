@@ -27,3 +27,11 @@ test('美股七姐妹分区包含七只目标股票', () => {
   assert.equal(category.name, '美股七姐妹')
   assert.deepEqual(symbols, ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA'])
 })
+
+test('消费分区使用沃尔玛观察大众零售', () => {
+  const category = CATEGORIES.find((item) => item.id === 'consumer')
+  const walmart = YAHOO_METRICS.find((item) => item.id === 'wmt')
+  assert.equal(category.name, '消费')
+  assert.equal(walmart.symbol, 'WMT')
+  assert.equal(walmart.category, 'consumer')
+})
