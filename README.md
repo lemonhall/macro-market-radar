@@ -28,3 +28,43 @@ Yahoo Finance 接口并非官方稳定 API，本项目只做个人只读观察�
 ## 私有访问
 
 生产环境通过 Vercel Routing Middleware 进行设备授权。访问密钥只以 SHA-256 哈希保存在 Vercel，授权链接通过 URL fragment 在浏览器内传递，不会进入服务端访问日志。设备首次授权后使用 180 天的 `HttpOnly` Cookie 无感访问；未授权请求在执行行情函数前返回 404。
+
+### 生成或轮换设备授权链接
+
+以下命令必须在 PowerShell 7 中从项目目录执行。它会生成一枚 256 位随机密钥，只把密钥的 SHA-256 哈希写入 Vercel，并在重新部署后输出设备授权链接：
+
+```powershell
+cd E:\development\macro-market-radar
+
+$bytes = [Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
+$deviceKey = [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+$digest = [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($deviceKey))
+$deviceHash = ([Convert]::ToHexString($digest)).ToLowerInvariant()
+
+vercel env add DEVICE_ACCESS_HASH production --value $deviceHash --yes --force --sensitive
+if ($LASTEXITCODE -ne 0) { throw '写入 Vercel 设备密钥哈希失败' }
+
+vercel --prod --yes
+if ($LASTEXITCODE -ne 0) { throw 'Vercel 生产部署失败' }
+
+$unlockUrl = "https://market.lemonhall.me/unlock.html#$deviceKey"
+Write-Output $unlockUrl
+```
+
+在每台电脑、手机或每个浏览器中打开一次输出的链接。页面会立即清除地址栏中的 fragment、写入 180 天的 `Secure + HttpOnly + SameSite=Lax` Cookie，然后跳转到看板。
+
+注意事项：
+
+- 不要把 `$deviceKey`、完整授权链接或 Cookie 写入 Git、README、日志、工单或公开聊天。
+- Vercel 中只保存 `$deviceHash`；哈希无法直接用于登录。
+- URL 中 `#` 后面的 fragment 不会随 HTTP 请求发送到 Vercel，因此不会进入服务端访问日志。
+- 轮换 `DEVICE_ACCESS_HASH` 后，所有旧设备 Cookie 会立即失效，需要使用新链接重新授权。
+- 180 天到期的是浏览器 Cookie。若密钥未轮换，原授权链接仍可重新授权；若链接遗失或怀疑泄露，执行上述流程生成新链接。
+- 清除浏览器站点数据、使用新的浏览器配置或无痕模式，也需要重新打开授权链接。
+
+轮换后可用无 Cookie 请求确认保护仍然生效：
+
+```powershell
+$response = Invoke-WebRequest -Uri 'https://market.lemonhall.me/api/market' -SkipHttpErrorCheck
+if ($response.StatusCode -ne 404) { throw '匿名访问未被正确拦截' }
+```
