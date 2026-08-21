@@ -23,7 +23,7 @@
 browser -> /api/market -> Yahoo chart adapter
                        -> US Treasury curve adapter
                        -> New York Fed / Fiscal Data adapters
-                       -> FRED economic-series adapter
+                       -> bundled FRED economic-series snapshot
         <- normalized snapshot + CDN cache headers
 ```
 

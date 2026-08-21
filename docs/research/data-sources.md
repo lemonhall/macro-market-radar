@@ -94,6 +94,8 @@ https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS20&cosd=2025-01-01
 
 `fredgraph.csv` 是 FRED 图表下载端点，并非有版本承诺的正式 FRED API。正式 [FRED API](https://fred.stlouisfed.org/docs/api/fred/series_observations.html) 需要 API key；免 key 请求实测返回 `400` 和 `api_key is not set`。对个人低频看板，CSV 可用；代码仍需把它当作可更换适配器。
 
+生产环境实测发现，FRED 会拒绝部分 Vercel 和 Cloudflare 出口。当前实现因此不在用户请求链路上读取 FRED，而由 GitHub Actions 每 6 小时抓取六个低频序列并更新 `data/economic-series.json`。只有观测值变化才提交并触发 Vercel 部署，既避免页面超时，也不会因无变化的定时检查消耗部署额度。
+
 不要把所有 FRED series 粗暴塞进同一请求。实测多个不同频率的 series 会返回 ZIP（内含 README 和 CSV），不再是可直接解析的单份 CSV。首版最稳妥的方式是逐 series 并发请求并共享缓存，或严格按相同频率分组。
 
 ### 2. 实际利率与通胀预期
@@ -197,7 +199,8 @@ netLiquidityApprox = WALCL - TGA - RRP * 1000
 |---|---|---|
 | Yahoo 行情、VIX、MOVE | 美股交易时段 5 分钟；盘后 30 分钟 | `s-maxage=300, stale-while-revalidate=3600` |
 | BTC | 5 分钟 | `s-maxage=300, stale-while-revalidate=900` |
-| 财政部收益率、实际利率、FRED 日频 | 6 小时检查一次 | `s-maxage=21600, stale-while-revalidate=86400` |
+| 财政部收益率、实际利率 | 6 小时检查一次 | `s-maxage=21600, stale-while-revalidate=86400` |
+| FRED 日频、周频、月频快照 | GitHub Actions 每 6 小时检查，只在变化时部署 | 随部署静态打包，不占 Vercel 运行时请求 |
 | SOFR、RRP、TGA | 6 小时检查一次 | `s-maxage=21600, stale-while-revalidate=86400` |
 | NFCI、WALCL 等周频 | 12 小时 | `s-maxage=43200, stale-while-revalidate=172800` |
 
@@ -235,6 +238,6 @@ netLiquidityApprox = WALCL - TGA - RRP * 1000
 - 美国财政部 XML：10/20/30 年名义收益率、实际利率。
 - 纽约联储 JSON：SOFR、RRP。
 - Fiscal Data JSON：TGA。
-- FRED CSV：信用利差、NFCI、美联储资产负债表、通胀预期，以及官方源失败时的回退。
+- FRED CSV 定时快照：信用利差、美联储资产负债表、就业、消费、生产和住房。
 
 这套组合可以覆盖 PDF 中绝大多数“看大趋势”指标。唯一应诚实留空的是没有可靠免费接口的 BDI；MOVE 可以显示，但只能作为 Yahoo 的非关键可选数据。

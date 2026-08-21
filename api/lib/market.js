@@ -26,8 +26,8 @@ export function assessFreshness(asOf, cadence, now = Date.now()) {
     return { key: 'stale', label: '已陈旧', ageHours }
   }
   if (cadence === 'monthly') {
-    if (ageHours <= 50 * 24) return { key: 'recent', label: '最新月值', ageHours }
-    if (ageHours <= 80 * 24) return { key: 'delayed', label: '月频延迟', ageHours }
+    if (ageHours <= 70 * 24) return { key: 'recent', label: '最新月值', ageHours }
+    if (ageHours <= 100 * 24) return { key: 'delayed', label: '月频延迟', ageHours }
     return { key: 'stale', label: '已陈旧', ageHours }
   }
   if (ageHours <= 1) return { key: 'live', label: '盘中', ageHours }
@@ -119,7 +119,7 @@ export async function getMarketSnapshot({ force = false, now = Date.now() } = {}
       { name: '美国财政部', cadence: '工作日日频', role: '2/10/20/30 年收益率与官方曲线' },
       { name: '纽约联储', cadence: '日频或月频', role: 'SOFR、逆回购与供应链压力' },
       { name: 'Fiscal Data', cadence: '工作日日频', role: '美国财政部现金余额' },
-      { name: 'FRED', cadence: '日频、周频或月频', role: '信用、资产负债表与实体经济' },
+      { name: 'FRED 定时快照', cadence: '每 6 小时检查更新', role: '信用、资产负债表与实体经济' },
     ],
     cache: 'fresh',
   }

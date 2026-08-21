@@ -1,4 +1,5 @@
 import { ProxyAgent, fetch as httpFetch } from 'undici'
+import economicSeriesSnapshot from '../../data/economic-series.json' with { type: 'json' }
 
 const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY
 const dispatcher = proxyUrl ? new ProxyAgent(proxyUrl) : undefined
@@ -342,24 +343,30 @@ export async function fetchGscpiMetric() {
   }, points)
 }
 
-function isoDateDaysAgo(days) {
-  const date = new Date(Date.now() - days * 86400000)
-  return date.toISOString().slice(0, 10)
+export function parseFredSeries(text, series) {
+  const rows = parseCsv(text)
+  const headers = rows[0] ?? []
+  const dateIndex = headers.indexOf('observation_date')
+  const valueIndex = headers.indexOf(series)
+  if (dateIndex < 0 || valueIndex < 0) throw new Error(`FRED ${series} CSV 字段不完整`)
+
+  return rows.slice(1)
+    .map((row) => {
+      const rawValue = row[valueIndex]?.trim()
+      return rawValue && rawValue !== '.'
+        ? { date: row[dateIndex], value: Number(rawValue) }
+        : null
+    })
+    .filter((point) => point?.date && Number.isFinite(point.value))
 }
 
 export async function fetchFredMetric(metric) {
-  const lookbackDays = metric.cadence === 'monthly' ? 450 : metric.cadence === 'weekly' ? 180 : 100
-  const url = `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${metric.series}&cosd=${isoDateDaysAgo(lookbackDays)}`
-  const rows = parseCsv(await fetchText(url, 12000))
+  const snapshot = economicSeriesSnapshot.series?.[metric.series]
+  if (!snapshot) throw new Error(`经济数据快照缺少 ${metric.series}`)
   const scale = metric.scale ?? 1
-  const points = rows.slice(1)
-    .map((row) => {
-      const rawValue = row[1]?.trim()
-      return rawValue && rawValue !== '.'
-        ? { time: `${row[0]}T21:00:00.000Z`, value: Number(rawValue) * scale }
-        : null
-    })
-    .filter((point) => point && Number.isFinite(point.value))
+  const points = snapshot.points
+    .map((point) => ({ time: `${point.date}T21:00:00.000Z`, value: Number(point.value) * scale }))
+    .filter((point) => Number.isFinite(point.value))
     .slice(-23)
   if (points.length < 2) throw new Error(`FRED ${metric.series} 有效数据不足`)
   const latest = points.at(-1)
@@ -367,7 +374,7 @@ export async function fetchFredMetric(metric) {
   return {
     ...definition,
     symbol: metric.series,
-    source: 'FRED',
+    source: 'FRED（GitHub 定时快照）',
     sourceUrl: `https://fred.stlouisfed.org/series/${metric.series}`,
     value: latest.value,
     ...calculateChanges(points, metric.changeKind, metric.cadence),

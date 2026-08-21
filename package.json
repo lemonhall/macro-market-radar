@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "update:data": "node scripts/update-economic-series.mjs",
     "test": "node --test \"src/**/*.test.js\" \"api/**/*.test.js\"",
     "test:e2e": "playwright test"
   },
