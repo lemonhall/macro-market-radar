@@ -1,6 +1,11 @@
 name: Update economic data
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/update-economic-data.yml'
+      - 'scripts/update-economic-series.mjs'
   schedule:
     - cron: '17 */6 * * *'
   workflow_dispatch:
