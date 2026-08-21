@@ -25,3 +25,13 @@ test('美元、VIX、MOVE 同涨且信用债下跌时识别为金融条件趋紧
   assert.equal(liquidity.title, '金融条件趋紧')
   assert.equal(liquidity.state, 'warning')
 })
+
+test('美股七姐妹作为一个合成因子进入风险偏好判断', () => {
+  const result = interpretRegime([
+    metric('aapl', 2), metric('msft', 2), metric('googl', 2), metric('amzn', 2),
+    metric('nvda', 2), metric('meta', 2), metric('tsla', 2),
+  ])
+  const risk = result.pulses.find((item) => item.id === 'risk')
+  assert.equal(risk.title, '风险偏好升温')
+  assert.equal(risk.score, 32)
+})

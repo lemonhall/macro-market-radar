@@ -1,5 +1,6 @@
 export const CATEGORIES = [
   { id: 'equity', name: '全球股市', description: '风险资产与经济预期' },
+  { id: 'megacap-tech', name: '美股七姐妹', description: '大型科技股与美股集中度' },
   { id: 'bonds', name: '债市与信用', description: '全球资产定价锚' },
   { id: 'metals', name: '金属', description: '避险、通胀与工业需求' },
   { id: 'energy', name: '能源', description: '通胀与地缘供给冲击' },
@@ -17,6 +18,14 @@ export const YAHOO_METRICS = [
   ['dow', '^DJI', 'equity', '道琼斯', '点', 2],
   ['russell', '^RUT', 'equity', '罗素 2000', '点', 2],
   ['vix', '^VIX', 'equity', 'VIX 恐慌指数', '点', 2],
+
+  ['aapl', 'AAPL', 'megacap-tech', '苹果', '美元', 2],
+  ['msft', 'MSFT', 'megacap-tech', '微软', '美元', 2],
+  ['googl', 'GOOGL', 'megacap-tech', '谷歌 A 类', '美元', 2],
+  ['amzn', 'AMZN', 'megacap-tech', '亚马逊', '美元', 2],
+  ['nvda', 'NVDA', 'megacap-tech', '英伟达', '美元', 2],
+  ['meta', 'META', 'megacap-tech', 'Meta', '美元', 2],
+  ['tsla', 'TSLA', 'megacap-tech', '特斯拉', '美元', 2],
 
   ['us10y', '^TNX', 'bonds', '美国 10 年收益率', '%', 3, 'basisPoints'],
   ['us30y', '^TYX', 'bonds', '美国 30 年收益率', '%', 3, 'basisPoints'],

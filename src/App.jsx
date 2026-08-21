@@ -8,6 +8,7 @@ import {
   CircleAlert,
   Clock3,
   Coins,
+  Crown,
   ExternalLink,
   Factory,
   Fuel,
@@ -25,6 +26,7 @@ import { useMarketData } from './hooks/use-market-data.js'
 
 const CATEGORY_ICONS = {
   equity: TrendingUp,
+  'megacap-tech': Crown,
   bonds: Landmark,
   metals: Coins,
   energy: Fuel,
@@ -34,6 +36,20 @@ const CATEGORY_ICONS = {
   healthcare: HeartPulse,
   defense: Shield,
   macro: Gauge,
+}
+
+const CATEGORY_NAMES = {
+  equity: '全球股市',
+  'megacap-tech': '美股七姐妹',
+  bonds: '债市与信用',
+  metals: '金属',
+  energy: '能源',
+  fx: '汇率',
+  'china-us': '中美温度',
+  semiconductor: '半导体',
+  healthcare: '医疗',
+  defense: '军工',
+  macro: '宏观底层',
 }
 
 const METRIC_NOTES = {
@@ -184,7 +200,7 @@ function DetailSheet({ metric, horizon, onClose }) {
     <div className="sheet-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="detail-sheet" role="dialog" aria-modal="true" aria-label={`${metric.name}详情`} onMouseDown={(event) => event.stopPropagation()}>
         <header>
-          <div><small>{metric.category} · {metric.symbol}</small><h2>{metric.name}</h2></div>
+          <div><small>{CATEGORY_NAMES[metric.category] ?? metric.category} · {metric.symbol}</small><h2>{metric.name}</h2></div>
           <button className="icon-button" onClick={onClose} aria-label="关闭详情" title="关闭"><X size={19} /></button>
         </header>
         <div className="detail-reading">

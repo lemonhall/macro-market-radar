@@ -41,6 +41,9 @@ function pulse(id, label, score, positive, negative, detail) {
 
 export function interpretRegime(metrics, horizon = 'day') {
   const map = metricMap(metrics)
+  const megacapChanges = ['aapl', 'msft', 'googl', 'amzn', 'nvda', 'meta', 'tsla']
+    .map((id) => normalizedChange(map, id, horizon))
+  const megacapSignal = megacapChanges.some(Number.isFinite) ? average(megacapChanges) : null
   const risk = average([
     normalizedChange(map, 'sp500', horizon),
     normalizedChange(map, 'russell', horizon),
@@ -48,6 +51,7 @@ export function interpretRegime(metrics, horizon = 'day') {
     normalizedChange(map, 'hyg', horizon),
     normalizedChange(map, 'vix', horizon, true),
     normalizedChange(map, 'move', horizon, true),
+    megacapSignal,
   ])
   const growth = average([
     normalizedChange(map, 'copper', horizon),
@@ -69,7 +73,7 @@ export function interpretRegime(metrics, horizon = 'day') {
   ])
 
   const pulses = [
-    pulse('risk', '风险偏好', risk, '风险偏好升温', '避险占优', '股市、信用债与波动率的合成信号'),
+    pulse('risk', '风险偏好', risk, '风险偏好升温', '避险占优', '股市、美股七姐妹、信用债与波动率的合成信号'),
     pulse('growth', '增长脉冲', growth, '增长交易改善', '增长预期降温', '铜、小盘股与中国权益的合成信号'),
     pulse('inflation', '通胀压力', inflation, '通胀交易升温', '通胀交易降温', '能源、铜与盈亏平衡通胀率的合成信号'),
     pulse('liquidity', '流动性压力', liquidity, '金融条件趋紧', '流动性改善', '美元、波动率与信用市场的合成信号'),
