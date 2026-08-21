@@ -15,6 +15,7 @@
 ## Architecture
 
 - `src/`: static React interface and deterministic regime interpretation.
+- `public/manifest.webmanifest`, `public/sw.js`, `public/icons/`: installable PWA shell and deterministic brand assets.
 - `api/market.js`: the only browser-facing data interface.
 - `api/lib/`: catalog, provider adapters, normalization and cache orchestration. Every upstream metric degrades independently.
 - `docs/research/`: provider research and source notes.
@@ -42,6 +43,7 @@ browser -> device-auth routing middleware -> /api/market -> Yahoo chart adapter
 - Yahoo endpoints are unofficial and may throttle. Keep retries bounded and preserve stale client data.
 - Do not label price direction as economic benefit. Tiles show “红涨绿跌”; regime cards provide interpretation separately.
 - Do not edit generated `dist/` files.
+- PWA service worker may cache the static shell, but must never intercept or cache `/api/market`.
 
 ## Verification
 

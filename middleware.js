@@ -2,7 +2,7 @@ import { next } from '@vercel/functions'
 
 import { ACCESS_COOKIE, accessCookie, readCookie, verifyAccessKey } from './api/lib/access.js'
 
-const PUBLIC_PATHS = new Set(['/unlock.html', '/robots.txt'])
+const PUBLIC_PATHS = new Set(['/unlock.html', '/robots.txt', '/manifest.webmanifest', '/sw.js'])
 
 function denied(status = 404) {
   return new Response(status === 404 ? 'Not Found' : 'Service Unavailable', {
@@ -38,7 +38,7 @@ async function unlock(request, expectedHash) {
 
 export default async function middleware(request) {
   const url = new URL(request.url)
-  if (PUBLIC_PATHS.has(url.pathname) && request.method === 'GET') return next()
+  if ((PUBLIC_PATHS.has(url.pathname) || url.pathname.startsWith('/icons/')) && request.method === 'GET') return next()
 
   const expectedHash = process.env.DEVICE_ACCESS_HASH
   if (!expectedHash) return denied(503)

@@ -26,3 +26,22 @@ test('iPhone 12 Pro Max 没有横向溢出且双列热力块可读', async ({ pa
   const columns = await page.locator('.metric-grid').first().evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length)
   expect(columns).toBe(2)
 })
+
+test('PWA 元数据与 iPhone 主屏图标可用', async ({ page, request }) => {
+  await page.goto('/')
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.webmanifest')
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/icons/apple-touch-icon.png')
+  await expect(page.locator('meta[name="apple-mobile-web-app-capable"]')).toHaveAttribute('content', 'yes')
+
+  const manifestResponse = await request.get('/manifest.webmanifest')
+  expect(manifestResponse.ok()).toBe(true)
+  const manifest = await manifestResponse.json()
+  expect(manifest.short_name).toBe('经纬雷达')
+  expect(manifest.display).toBe('standalone')
+  expect(manifest.icons.map((icon) => icon.purpose)).toContain('maskable')
+
+  const serviceWorkerResponse = await request.get('/sw.js')
+  expect(serviceWorkerResponse.ok()).toBe(true)
+  const serviceWorker = await serviceWorkerResponse.text()
+  expect(serviceWorker).toContain("url.pathname.startsWith('/api/')")
+})

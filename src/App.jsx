@@ -312,7 +312,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark"><Activity size={18} /></span><div><strong>经纬雷达</strong><small>全球市场温度</small></div></div>
+        <div className="brand"><span className="brand-mark"><img src="/icons/radar-mark.svg" alt="" /></span><div><strong>经纬雷达</strong><small>全球市场温度</small></div></div>
         <div className="header-status"><Clock3 size={13} /><span>汇总于 {localTime(snapshot.generatedAt)}</span><b>红涨绿跌</b></div>
         <div className="header-actions">
           <div className="segmented" aria-label="变化周期">
