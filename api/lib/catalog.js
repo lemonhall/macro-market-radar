@@ -2,6 +2,7 @@ export const CATEGORIES = [
   { id: 'equity', name: '全球股市', description: '风险资产与经济预期' },
   { id: 'megacap-tech', name: '美股七姐妹', description: '大型科技股与美股集中度' },
   { id: 'consumer', name: '消费', description: '居民购买力与防御型零售' },
+  { id: 'finance-housing', name: '金融与地产', description: '信用传导、银行压力与住房周期' },
   { id: 'bonds', name: '债市与信用', description: '全球资产定价锚' },
   { id: 'metals', name: '金属', description: '避险、通胀与工业需求' },
   { id: 'energy', name: '能源', description: '通胀与地缘供给冲击' },
@@ -11,6 +12,7 @@ export const CATEGORIES = [
   { id: 'healthcare', name: '医疗', description: '防御需求与创新风险偏好' },
   { id: 'defense', name: '军工', description: '预算、补库与地缘风险' },
   { id: 'macro', name: '宏观底层', description: 'Yahoo 缺失的官方与公共数据' },
+  { id: 'economy', name: '经济底盘', description: '就业、消费、生产、住房与供应链' },
 ]
 
 export const YAHOO_METRICS = [
@@ -19,6 +21,9 @@ export const YAHOO_METRICS = [
   ['dow', '^DJI', 'equity', '道琼斯', '点', 2],
   ['russell', '^RUT', 'equity', '罗素 2000', '点', 2],
   ['vix', '^VIX', 'equity', 'VIX 恐慌指数', '点', 2],
+  ['stoxx600', '^STOXX', 'equity', '欧洲 STOXX 600', '点', 2],
+  ['nikkei225', '^N225', 'equity', '日经 225', '点', 2],
+  ['nifty50', '^NSEI', 'equity', '印度 Nifty 50', '点', 2],
 
   ['aapl', 'AAPL', 'megacap-tech', '苹果', '美元', 2],
   ['msft', 'MSFT', 'megacap-tech', '微软', '美元', 2],
@@ -29,9 +34,13 @@ export const YAHOO_METRICS = [
   ['tsla', 'TSLA', 'megacap-tech', '特斯拉', '美元', 2],
 
   ['wmt', 'WMT', 'consumer', '沃尔玛', '美元', 2],
+  ['xly', 'XLY', 'consumer', '可选消费 ETF', '美元', 2],
+  ['xlp', 'XLP', 'consumer', '必选消费 ETF', '美元', 2],
 
-  ['us10y', '^TNX', 'bonds', '美国 10 年收益率', '%', 3, 'basisPoints'],
-  ['us30y', '^TYX', 'bonds', '美国 30 年收益率', '%', 3, 'basisPoints'],
+  ['xlf', 'XLF', 'finance-housing', '美国金融 ETF', '美元', 2],
+  ['kre', 'KRE', 'finance-housing', '美国区域银行 ETF', '美元', 2],
+  ['xhb', 'XHB', 'finance-housing', '美国住宅建筑 ETF', '美元', 2],
+
   ['move', '^MOVE', 'bonds', 'MOVE 债券波动率', '点', 2],
   ['hyg', 'HYG', 'bonds', '美国高收益债 ETF', '美元', 2],
 
@@ -81,5 +90,28 @@ export const YAHOO_METRICS = [
 }))
 
 export const FRED_METRICS = [
-  // Reserved for a reliable FRED transport or an API key-backed adapter.
+  {
+    id: 'hySpread', series: 'BAMLH0A0HYM2', category: 'bonds', name: '美国高收益债 OAS',
+    unit: '%', decimals: 2, changeKind: 'basisPoints', cadence: 'daily',
+  },
+  {
+    id: 'fedAssets', series: 'WALCL', category: 'macro', name: '美联储总资产',
+    unit: '万亿美元', decimals: 2, changeKind: 'absolute', cadence: 'weekly', scale: 0.000001,
+  },
+  {
+    id: 'joblessClaims', series: 'ICSA', category: 'economy', name: '美国首次申领失业救济',
+    unit: '万人', decimals: 1, changeKind: 'absolute', cadence: 'weekly', scale: 0.0001,
+  },
+  {
+    id: 'retailSales', series: 'RSAFS', category: 'economy', name: '美国零售销售',
+    unit: '十亿美元', decimals: 1, changeKind: 'percent', cadence: 'monthly', scale: 0.001,
+  },
+  {
+    id: 'industrialProduction', series: 'INDPRO', category: 'economy', name: '美国工业生产',
+    unit: '指数', decimals: 2, changeKind: 'percent', cadence: 'monthly',
+  },
+  {
+    id: 'housingStarts', series: 'HOUST', category: 'economy', name: '美国新屋开工',
+    unit: '万套/年', decimals: 1, changeKind: 'percent', cadence: 'monthly', scale: 0.1,
+  },
 ]

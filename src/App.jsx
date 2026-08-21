@@ -5,6 +5,8 @@ import {
   ArrowUpRight,
   Banknote,
   BarChart3,
+  BriefcaseBusiness,
+  Building2,
   CircleAlert,
   Clock3,
   Coins,
@@ -22,13 +24,14 @@ import {
   X,
 } from 'lucide-react'
 
-import { interpretRegime } from './domain/regime.js'
+import { deriveStructureSignals, interpretRegime } from './domain/regime.js'
 import { useMarketData } from './hooks/use-market-data.js'
 
 const CATEGORY_ICONS = {
   equity: TrendingUp,
   'megacap-tech': Crown,
   consumer: ShoppingCart,
+  'finance-housing': Building2,
   bonds: Landmark,
   metals: Coins,
   energy: Fuel,
@@ -38,12 +41,14 @@ const CATEGORY_ICONS = {
   healthcare: HeartPulse,
   defense: Shield,
   macro: Gauge,
+  economy: BriefcaseBusiness,
 }
 
 const CATEGORY_NAMES = {
   equity: '全球股市',
   'megacap-tech': '美股七姐妹',
   consumer: '消费',
+  'finance-housing': '金融与地产',
   bonds: '债市与信用',
   metals: '金属',
   energy: '能源',
@@ -53,6 +58,7 @@ const CATEGORY_NAMES = {
   healthcare: '医疗',
   defense: '军工',
   macro: '宏观底层',
+  economy: '经济底盘',
 }
 
 const METRIC_NOTES = {
@@ -63,7 +69,6 @@ const METRIC_NOTES = {
   hyg: '高收益债 ETF 的价格代理。下跌可能意味着信用风险溢价扩大。',
   real10y: '美国 10 年通胀保值国债实际收益率，是黄金与长期成长资产的重要定价参考。',
   breakeven10y: '名义国债与通胀保值国债收益率之差，是市场通胀预期的近似代理。',
-  hySpread: '美国高收益企业债相对国债的期权调整利差，走阔通常意味着信用压力增加。',
   nfci: '芝加哥联储金融条件指数。正值通常比历史平均更紧，负值通常更宽松。',
   sofr: '有抵押隔夜融资利率，是美元回购市场的核心基准利率。',
   rrp: '纽约联储隔夜逆回购工具的使用余额。变化需结合 TGA 与美联储资产负债表观察。',
@@ -71,6 +76,19 @@ const METRIC_NOTES = {
   bdry: '干散货期货策略 ETF，只作为运价市场代理，不是 Baltic Dry Index。',
   btc: '7×24 小时交易的高波动风险资产，常被用于观察边际风险偏好，但关系并不稳定。',
   wmt: '沃尔玛覆盖食品、日用品和可选消费，是观察美国大众购买力与防御型零售需求的代理；股价也会受到利润率、电商和公司自身经营影响。',
+  us2y: '美国 2 年期国债收益率对政策利率路径较敏感，与 10 年期收益率共同构成期限曲线。',
+  hySpread: 'ICE BofA 美国高收益债期权调整利差。走阔通常意味着信用风险补偿上升。',
+  fedAssets: '美联储总资产为周频数据。与 TGA、逆回购结合时只能构造市场常用的流动性近似值。',
+  xly: '可选消费行业 ETF，对居民可支配收入、信贷条件与风险偏好较敏感。',
+  xlp: '必选消费行业 ETF，通常具有更强防御属性，应与可选消费相对观察。',
+  xlf: '美国金融行业 ETF，覆盖银行、保险和资本市场，是利率与信用周期的传导层。',
+  kre: '美国区域银行 ETF，对存款成本、商业地产和中小企业信用条件较敏感。',
+  xhb: '美国住宅建筑 ETF，对按揭利率、住房需求和建设周期较敏感。',
+  joblessClaims: '美国首次申领失业救济人数为周频就业转折指标，单周波动需要结合四周趋势观察。',
+  retailSales: '美国 Census Bureau 零售销售的 FRED 序列，月频且可能修订。',
+  industrialProduction: '美联储工业生产指数，观察制造业、采矿业与公用事业的实际产出。',
+  housingStarts: '美国新屋开工的折年率，月频波动较大，用于确认住房周期。',
+  gscpi: '纽约联储全球供应链压力指数。零附近代表历史常态，正值越高通常表示压力越大。',
 }
 
 function formatValue(metric) {
@@ -83,6 +101,19 @@ function formatValue(metric) {
 
 function selectedChange(metric, horizon) {
   return horizon === 'day' ? metric.dayChange : metric.monthChange
+}
+
+function comparisonLabel(metric, horizon) {
+  if (metric.cadence === 'monthly') return '较上期'
+  if (horizon === 'day' && metric.cadence === 'weekly') return '较上期'
+  return horizon === 'day' ? '较前值' : '近一月'
+}
+
+function cadenceLabel(cadence) {
+  if (cadence === 'intraday') return '盘中 / 日频'
+  if (cadence === 'daily') return '工作日日频'
+  if (cadence === 'weekly') return '周频'
+  return '月频'
 }
 
 function formatChange(metric, horizon) {
@@ -160,7 +191,7 @@ function MetricTile({ metric, horizon, onOpen }) {
       <span className="metric-move">
         {tone !== 'unavailable' && tone !== 'flat' && <ChangeIcon size={14} />}
         <strong>{formatChange(metric, horizon)}</strong>
-        <small>{horizon === 'day' ? '较前值' : '近一月'}</small>
+        <small>{comparisonLabel(metric, horizon)}</small>
       </span>
       <Sparkline points={metric.points} tone={tone} />
       <span className="metric-footer"><span>{metric.symbol}</span><span>{localTime(metric.asOf, metric.cadence === 'intraday')}</span></span>
@@ -179,6 +210,29 @@ function PulseStrip({ regime }) {
           <small>强度 {Math.abs(pulse.score)}/100</small>
         </article>
       ))}
+    </section>
+  )
+}
+
+function formatSignalValue(signal) {
+  const digits = signal.unit === '万亿美元' ? 2 : 1
+  const sign = signal.unit !== '万亿美元' && signal.value > 0 ? '+' : ''
+  return `${sign}${signal.value.toFixed(digits)} ${signal.unit}`
+}
+
+function StructureStrip({ signals }) {
+  return (
+    <section className="structure-section" aria-label="结构信号">
+      <header><strong>结构信号</strong><span>相对强弱与派生指标</span></header>
+      <div className="structure-grid">
+        {signals.map((signal) => (
+          <article className={`structure-signal signal-${signal.tone}`} key={signal.id}>
+            <span>{signal.label}</span>
+            <div><strong>{signal.title}</strong><b>{formatSignalValue(signal)}</b></div>
+            <small>{signal.detail}</small>
+          </article>
+        ))}
+      </div>
     </section>
   )
 }
@@ -209,14 +263,14 @@ function DetailSheet({ metric, horizon, onClose }) {
         </header>
         <div className="detail-reading">
           <div><strong>{formatValue(metric)}</strong><span>{metric.unit}</span></div>
-          <span className={`detail-change change-${tone}`}>{formatChange(metric, horizon)} · {horizon === 'day' ? '较前值' : '近一月'}</span>
+          <span className={`detail-change change-${tone}`}>{formatChange(metric, horizon)} · {comparisonLabel(metric, horizon)}</span>
         </div>
         <Sparkline points={metric.points} tone={tone} large />
         <div className="detail-facts">
           <div><span>新鲜度</span><Freshness metric={metric} /></div>
           <div><span>数据时点</span><strong>{metric.asOf ? new Date(metric.asOf).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : '未知'}</strong></div>
           <div><span>数据来源</span><strong>{metric.source}</strong></div>
-          <div><span>更新频率</span><strong>{metric.cadence === 'intraday' ? '盘中 / 日频' : metric.cadence === 'daily' ? '工作日日频' : '周频'}</strong></div>
+          <div><span>更新频率</span><strong>{cadenceLabel(metric.cadence)}</strong></div>
         </div>
         <p className="metric-note">{METRIC_NOTES[metric.id] ?? '该指标用于观察所在市场板块的价格方向与相对强弱，不应单独作为交易结论。'}</p>
         {metric.sourceUrl && <a className="source-link" href={metric.sourceUrl} target="_blank" rel="noreferrer">查看原始来源 <ExternalLink size={14} /></a>}
@@ -241,6 +295,10 @@ export default function App() {
   const [selectedMetric, setSelectedMetric] = useState(null)
 
   const regime = useMemo(() => snapshot ? interpretRegime(snapshot.metrics, horizon) : null, [snapshot, horizon])
+  const structureSignals = useMemo(
+    () => snapshot ? deriveStructureSignals(snapshot.metrics, horizon) : [],
+    [snapshot, horizon],
+  )
   const grouped = useMemo(() => {
     if (!snapshot) return []
     return snapshot.categories.map((category) => ({
@@ -272,6 +330,7 @@ export default function App() {
         </section>
 
         <PulseStrip regime={regime} />
+        <StructureStrip signals={structureSignals} />
 
         <nav className="category-nav" aria-label="市场分类">
           {grouped.map((category) => <a key={category.id} href={`#${category.id}`}>{category.name}</a>)}

@@ -63,24 +63,28 @@ function finitePoints(timestamps, values) {
     .filter((point) => point.time && Number.isFinite(point.value))
 }
 
-function calculateChanges(points, changeKind) {
+function calculateChanges(points, changeKind, cadence = 'intraday') {
   const latest = points.at(-1)?.value
   const previous = points.at(-2)?.value
-  const first = points[0]?.value
-  if (![latest, previous, first].every(Number.isFinite)) return { dayChange: null, monthChange: null }
+  const monthReference = cadence === 'weekly'
+    ? (points.at(-5)?.value ?? points[0]?.value)
+    : cadence === 'monthly'
+      ? previous
+      : points[0]?.value
+  if (![latest, previous, monthReference].every(Number.isFinite)) return { dayChange: null, monthChange: null }
 
   if (changeKind === 'basisPoints') {
     return {
       dayChange: (latest - previous) * 100,
-      monthChange: (latest - first) * 100,
+      monthChange: (latest - monthReference) * 100,
     }
   }
   if (changeKind === 'absolute') {
-    return { dayChange: latest - previous, monthChange: latest - first }
+    return { dayChange: latest - previous, monthChange: latest - monthReference }
   }
   return {
     dayChange: previous === 0 ? null : ((latest / previous) - 1) * 100,
-    monthChange: first === 0 ? null : ((latest / first) - 1) * 100,
+    monthChange: monthReference === 0 ? null : ((latest / monthReference) - 1) * 100,
   }
 }
 
@@ -102,7 +106,7 @@ export async function fetchYahooMetric(metric) {
       return {
         ...metric,
         value: latest.value,
-        ...calculateChanges(points, metric.changeKind),
+        ...calculateChanges(points, metric.changeKind, metric.cadence),
         points: points.map((point) => point.value),
         asOf: new Date((chart.meta.regularMarketTime ?? chart.timestamp.at(-1)) * 1000).toISOString(),
         currency: chart.meta.currency ?? null,
@@ -125,7 +129,7 @@ function chartToYahooMetric(metric, chart) {
   return {
     ...metric,
     value: latest.value,
-    ...calculateChanges(points, metric.changeKind),
+    ...calculateChanges(points, metric.changeKind, metric.cadence),
     points: points.map((point) => point.value),
     asOf: new Date(marketTime * 1000).toISOString(),
     currency: chart.meta.currency ?? null,
@@ -228,7 +232,7 @@ function seriesMetric(definition, points) {
   return {
     ...definition,
     value: latest.value,
-    ...calculateChanges(points, definition.changeKind),
+    ...calculateChanges(points, definition.changeKind, definition.cadence),
     points: points.map((point) => point.value),
     asOf: latest.time,
     available: true,
@@ -241,8 +245,10 @@ export async function fetchTreasuryMetrics() {
   const nominalUrl = `${base}/daily-treasury-rates.csv/${year}/all?type=daily_treasury_yield_curve&field_tdr_date_value=${year}&page&_format=csv`
   const realUrl = `${base}/daily-treasury-rates.csv/${year}/all?type=daily_treasury_real_yield_curve&field_tdr_date_value=${year}&page&_format=csv`
   const [nominalText, realText] = await Promise.all([fetchText(nominalUrl, 8000), fetchText(realUrl, 8000)])
+  const nominal2 = treasuryPoints(nominalText, '2 Yr')
   const nominal10 = treasuryPoints(nominalText, '10 Yr')
   const nominal20 = treasuryPoints(nominalText, '20 Yr')
+  const nominal30 = treasuryPoints(nominalText, '30 Yr')
   const real10 = treasuryPoints(realText, '10 YR')
   const realByDate = new Map(real10.map((point) => [point.time, point.value]))
   const breakeven10 = nominal10
@@ -252,9 +258,21 @@ export async function fetchTreasuryMetrics() {
 
   return [
     seriesMetric({
+      id: 'us2y', symbol: 'UST-2Y', category: 'bonds', name: '美国 2 年收益率', unit: '%', decimals: 2,
+      changeKind: 'basisPoints', cadence: 'daily', source: '美国财政部', sourceUrl,
+    }, nominal2),
+    seriesMetric({
+      id: 'us10y', symbol: 'UST-10Y', category: 'bonds', name: '美国 10 年收益率', unit: '%', decimals: 2,
+      changeKind: 'basisPoints', cadence: 'daily', source: '美国财政部', sourceUrl,
+    }, nominal10),
+    seriesMetric({
       id: 'us20y', symbol: 'UST-20Y', category: 'bonds', name: '美国 20 年收益率', unit: '%', decimals: 2,
       changeKind: 'basisPoints', cadence: 'daily', source: '美国财政部', sourceUrl,
     }, nominal20),
+    seriesMetric({
+      id: 'us30y', symbol: 'UST-30Y', category: 'bonds', name: '美国 30 年收益率', unit: '%', decimals: 2,
+      changeKind: 'basisPoints', cadence: 'daily', source: '美国财政部', sourceUrl,
+    }, nominal30),
     seriesMetric({
       id: 'real10y', symbol: 'UST-REAL-10Y', category: 'macro', name: '10 年实际利率', unit: '%', decimals: 2,
       changeKind: 'basisPoints', cadence: 'daily', source: '美国财政部', sourceUrl,
@@ -297,27 +315,62 @@ export async function fetchLiquidityMetrics() {
   ]
 }
 
+function parseGscpiDate(value) {
+  const [day, monthName, year] = value.split('-')
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(monthName)
+  if (month < 0) return null
+  return new Date(Date.UTC(Number(year), month, Number(day), 21)).toISOString()
+}
+
+export async function fetchGscpiMetric() {
+  const url = 'https://www.newyorkfed.org/medialibrary/research/interactives/data/gscpi/gscpi_interactive_data.csv'
+  const rows = parseCsv(await fetchText(url, 12000))
+  const latestVintageIndex = rows[0].length - 1
+  const points = rows.slice(1)
+    .map((row) => {
+      const rawValue = row[latestVintageIndex]?.trim()
+      const time = parseGscpiDate(row[0])
+      return rawValue && time ? { time, value: Number(rawValue) } : null
+    })
+    .filter((point) => point && Number.isFinite(point.value))
+    .sort((left, right) => left.time.localeCompare(right.time))
+    .slice(-23)
+  return seriesMetric({
+    id: 'gscpi', symbol: 'GSCPI', category: 'economy', name: '全球供应链压力', unit: '标准差', decimals: 2,
+    changeKind: 'absolute', cadence: 'monthly', source: '纽约联储',
+    sourceUrl: 'https://www.newyorkfed.org/research/policy/gscpi',
+  }, points)
+}
+
 function isoDateDaysAgo(days) {
   const date = new Date(Date.now() - days * 86400000)
   return date.toISOString().slice(0, 10)
 }
 
 export async function fetchFredMetric(metric) {
-  const url = `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${metric.series}&cosd=${isoDateDaysAgo(100)}`
-  const rows = parseCsv(await fetchText(url, 7500))
+  const lookbackDays = metric.cadence === 'monthly' ? 450 : metric.cadence === 'weekly' ? 180 : 100
+  const url = `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${metric.series}&cosd=${isoDateDaysAgo(lookbackDays)}`
+  const rows = parseCsv(await fetchText(url, 12000))
+  const scale = metric.scale ?? 1
   const points = rows.slice(1)
-    .map((row) => ({ time: `${row[0]}T21:00:00.000Z`, value: Number(row[1]) }))
-    .filter((point) => Number.isFinite(point.value))
+    .map((row) => {
+      const rawValue = row[1]?.trim()
+      return rawValue && rawValue !== '.'
+        ? { time: `${row[0]}T21:00:00.000Z`, value: Number(rawValue) * scale }
+        : null
+    })
+    .filter((point) => point && Number.isFinite(point.value))
     .slice(-23)
   if (points.length < 2) throw new Error(`FRED ${metric.series} 有效数据不足`)
   const latest = points.at(-1)
+  const { scale: _scale, ...definition } = metric
   return {
-    ...metric,
+    ...definition,
     symbol: metric.series,
     source: 'FRED',
     sourceUrl: `https://fred.stlouisfed.org/series/${metric.series}`,
     value: latest.value,
-    ...calculateChanges(points, metric.changeKind),
+    ...calculateChanges(points, metric.changeKind, metric.cadence),
     points: points.map((point) => point.value),
     asOf: latest.time,
     available: true,

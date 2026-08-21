@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-“经纬雷达”是中文优先的只读全球宏观行情面板，面向手机与桌面浏览。它聚合 Yahoo Finance、美国财政部和可选 FRED 数据，以低频缓存换取低 Vercel 资源占用。
+“经纬雷达”是中文优先的只读全球宏观行情面板，面向手机与桌面浏览。它聚合 Yahoo Finance、美国财政部、纽约联储、Fiscal Data 和 FRED 数据，以低频缓存换取低 Vercel 资源占用。
 
 ## Quick Commands
 
@@ -16,13 +16,14 @@
 
 - `src/`: static React interface and deterministic regime interpretation.
 - `api/market.js`: the only browser-facing data interface.
-- `api/lib/`: catalog, provider adapters, normalization and cache orchestration. The FRED adapter stays disabled until a reliable transport is available.
+- `api/lib/`: catalog, provider adapters, normalization and cache orchestration. Every upstream metric degrades independently.
 - `docs/research/`: provider research and source notes.
 
 ```text
 browser -> /api/market -> Yahoo chart adapter
                        -> US Treasury curve adapter
-                       -> optional FRED adapter
+                       -> New York Fed / Fiscal Data adapters
+                       -> FRED economic-series adapter
         <- normalized snapshot + CDN cache headers
 ```
 
