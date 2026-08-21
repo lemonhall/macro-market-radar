@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <title>设备授权</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        align-items: center;
+        background: #0d1117;
+        color: #e6edf3;
+        display: flex;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        justify-content: center;
+        margin: 0;
+        min-height: 100vh;
+        padding: 24px;
+      }
+      main { text-align: center; }
+      i {
+        animation: spin 0.8s linear infinite;
+        border: 2px solid #30363d;
+        border-radius: 50%;
+        border-top-color: #58a6ff;
+        display: inline-block;
+        height: 28px;
+        width: 28px;
+      }
+      strong { display: block; font-size: 16px; margin-top: 16px; }
+      p { color: #8b949e; font-size: 13px; margin: 8px 0 0; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <i aria-hidden="true"></i>
+      <strong id="status">正在验证此设备</strong>
+      <p id="detail">验证完成后将自动进入看板</p>
+    </main>
+    <script>
+      const status = document.querySelector('#status')
+      const detail = document.querySelector('#detail')
+      const key = location.hash.slice(1)
+      history.replaceState(null, '', '/unlock.html')
+
+      async function unlock() {
+        if (!key) throw new Error('授权链接缺少设备密钥')
+        const response = await fetch('/__device_unlock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key }),
+        })
+        if (!response.ok) throw new Error('授权链接无效或已经失效')
+        location.replace('/')
+      }
+
+      unlock().catch((error) => {
+        document.querySelector('i').style.display = 'none'
+        status.textContent = '设备授权失败'
+        detail.textContent = error.message
+      })
+    </script>
+  </body>
+</html>

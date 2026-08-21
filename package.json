@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@vercel/functions": "^3.9.5",
     "@vitejs/plugin-react": "^5.0.4",
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",

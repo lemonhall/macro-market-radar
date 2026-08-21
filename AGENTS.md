@@ -20,10 +20,10 @@
 - `docs/research/`: provider research and source notes.
 
 ```text
-browser -> /api/market -> Yahoo chart adapter
-                       -> US Treasury curve adapter
-                       -> New York Fed / Fiscal Data adapters
-                       -> bundled FRED economic-series snapshot
+browser -> device-auth routing middleware -> /api/market -> Yahoo chart adapter
+                                                       -> US Treasury curve adapter
+                                                       -> New York Fed / Fiscal Data adapters
+                                                       -> bundled FRED economic-series snapshot
         <- normalized snapshot + CDN cache headers
 ```
 
@@ -38,6 +38,7 @@ browser -> /api/market -> Yahoo chart adapter
 ## Safety
 
 - Never commit provider credentials or `.vercel` metadata.
+- `DEVICE_ACCESS_HASH` is a production-only Vercel secret. Never commit the raw device key or put it in a query string; enrollment uses the URL fragment handled by `public/unlock.html`.
 - Yahoo endpoints are unofficial and may throttle. Keep retries bounded and preserve stale client data.
 - Do not label price direction as economic benefit. Tiles show “红涨绿跌”; regime cards provide interpretation separately.
 - Do not edit generated `dist/` files.

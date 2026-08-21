@@ -24,3 +24,7 @@ npm run dev
 - Vercel CDN 缓存 15 分钟，并允许使用 24 小时陈旧数据后台更新。
 
 Yahoo Finance 接口并非官方稳定 API，本项目只做个人只读观察，不用于交易执行。
+
+## 私有访问
+
+生产环境通过 Vercel Routing Middleware 进行设备授权。访问密钥只以 SHA-256 哈希保存在 Vercel，授权链接通过 URL fragment 在浏览器内传递，不会进入服务端访问日志。设备首次授权后使用 180 天的 `HttpOnly` Cookie 无感访问；未授权请求在执行行情函数前返回 404。
